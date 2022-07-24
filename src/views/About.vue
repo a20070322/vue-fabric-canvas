@@ -82,10 +82,11 @@
       accept="image/*"
     />
     <img id="img" :src="imgSrc" />
-    <img id="expImg" src="../assets/icons/draw/exp.jpg" />
+    <img id="expImg" src="../assets/icons/draw/exp.png" />
   </div>
 </template>
 <script>
+import { fabric } from "fabric";
 export default {
   name: "About",
   data() {
@@ -177,7 +178,7 @@ export default {
     loadExpImg() {
       var imgElement = document.getElementById("expImg"); //声明我们的图片
       var imgInstance = new fabric.Image(imgElement, {
-        selectable: false,
+        selectable: true,
         // zIndex:-99,
       });
       this.canvas.add(imgInstance);
@@ -240,6 +241,7 @@ export default {
       this.mouseFrom.y = xy.y;
       this.doDrawing = true;
       if (this.drawType == "text") {
+        console.log("绘制判断-001");
         this.drawing();
       }
 
@@ -292,6 +294,7 @@ export default {
       // 多边形与文字框特殊处理
       if (this.drawType != "text" || this.drawType != "polygon") {
         this.drawing(e);
+        console.log("绘制判断-002");
       }
       if (this.drawType == "polygon") {
         if (this.activeLine && this.activeLine.class == "line") {
@@ -455,6 +458,7 @@ export default {
       this.drawType = null;
     },
     drawing(e) {
+      console.log("进入绘制");
       if (this.drawingObject) {
         this.canvas.remove(this.drawingObject);
       }
@@ -492,11 +496,13 @@ export default {
             " L " + (x2 - centerx - w1 * 2) + " " + (y2 - centery + h1 * 2);
           path += " L " + (x2 - centerx - w1) + " " + (y2 - centery + h1);
           path += " Z";
+          console.log(path);
           canvasObject = new fabric.Path(path, {
             stroke: this.color,
             fill: this.color,
             strokeWidth: this.drawWidth,
           });
+          console.log(canvasObject);
           break;
         case "pentagram": //五角星
           var x11 = mouseFrom.x,
