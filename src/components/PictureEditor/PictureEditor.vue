@@ -24,6 +24,13 @@
       @back="handleBack"
       @confirm="clipConfirm"
     ></ClipPicture>
+    <el-image :src="activeUrl" fit="contain" v-show="step === 2"> </el-image>
+    <!-- <EditPicture
+      v-show="step === 2"
+      ref="EditPicture"
+      @back="handleBack"
+      @confirm="editConfirm"
+    ></EditPicture> -->
   </div>
 </template>
 
@@ -88,13 +95,15 @@ export default {
       }
       this.activeUrl = e.img.url;
       this.step++;
-      this.$refs.ClipPicture.selectPic(this.activeUrl);
+      this.$refs.ClipPicture.selectPic(e.img.url);
     },
     handleBack() {
       this.step--;
     },
     clipConfirm(url) {
       console.log(url);
+      this.activeUrl = url;
+      this.step++;
     },
   },
   mounted() {

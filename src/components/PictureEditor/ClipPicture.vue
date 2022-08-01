@@ -97,7 +97,6 @@ export default {
       } else {
         this.clipSrc = this.getCLipImg();
         this.$emit("confirm", this.clipSrc);
-        console.log(this.clipSrc);
       }
     },
     // preview() {
