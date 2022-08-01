@@ -1,42 +1,43 @@
 <template>
-  <div class="home">
-    <div class="panel">
-      <div>
-        <button @click="selectPic(1)">图片一</button>
-        <button @click="selectPic(2)">图片2</button>
-      </div>
-      <div>
-        <button @click="save">裁剪</button>
-        <button @click="preview">预览</button>
-      </div>
-      <canvas
-        ref="panel_canvas"
-        class="panel__canvas"
-        :width="canvasSize.width"
-        :height="canvasSize.height"
-      ></canvas>
-      <img class="panel__clip" :src="clipSrc" alt="" />
+  <div class="clip-picture" ref="clip_picture">
+    <canvas
+      ref="clip_picture_canvas"
+      class="clip-picture__canvas"
+      :width="canvasSize.width"
+      :height="canvasSize.height"
+    ></canvas>
+    <div class="clip-picture__btns" ref="clip_picture_btns">
+      <el-button size="mini" type="primary" @click="handleClick(0)"
+        >返回
+      </el-button>
+      <el-button size="mini" type="success" @click="handleClick(1)">
+        确认
+      </el-button>
     </div>
   </div>
 </template>
+
 <script>
-import { fabric } from "fabric";
-import { fromImgURL, eleAdaptiveCanvas } from "./utils.js";
+import { fromImgURL, eleAdaptiveCanvas } from "./utils/utils";
 export default {
-  name: "About",
   data() {
     return {
       canvasSize: {
-        width: 800,
-        height: 450,
+        // width: 800,
+        // height: 450,
+        proportion: {
+          width: 16,
+          height: 9,
+        },
       },
       outPut: {
         width: 1280,
         height: 720,
       },
       clipBorder: {
-        color: "rgba(255,81,81,0.6)",
-        strokeWidth: 2,
+        // color: "rgba(255,81,81,0.6)",
+        color: "#67C23A",
+        strokeWidth: 4,
         proportion: {
           width: 3,
           height: 2,
@@ -52,27 +53,61 @@ export default {
     };
   },
   methods: {
-    selectPic(type) {
-      switch (type) {
-        case 1:
-          this.selectPicSrc = "/face.png";
-          break;
-        case 2:
-          this.selectPicSrc = "/face2.jpeg";
-          break;
-        default:
-          break;
+    /**
+     * 计算画布大小
+     */
+    calculateCanvasSize() {
+      return new Promise((resolve) => {
+        this.$nextTick(() => {
+          const { clientWidth, clientHeight } = this.$refs.clip_picture;
+          let canvasWidth, canvasHeight;
+          if (this.canvasSize.proportion) {
+            if (
+              this.canvasSize.proportion.width >
+                this.canvasSize.proportion.height &&
+              ((clientWidth * 0.8) / this.canvasSize.proportion.width) *
+                this.canvasSize.proportion.height <
+                clientHeight
+            ) {
+              const unit =
+                (clientWidth * 0.8) / this.canvasSize.proportion.width;
+              canvasWidth = unit * this.canvasSize.proportion.width;
+              canvasHeight = unit * this.canvasSize.proportion.height;
+            } else {
+              const unit =
+                (clientHeight * 0.8) / this.canvasSize.proportion.height;
+              canvasWidth = unit * this.canvasSize.proportion.width;
+              canvasHeight = unit * this.canvasSize.proportion.height;
+            }
+            this.$set(this.canvasSize, "width", canvasWidth);
+            this.$set(this.canvasSize, "height", canvasHeight);
+          }
+          resolve();
+        });
+      });
+    },
+    /** 切换裁剪图片 */
+    async selectPic(url) {
+      this.selectPicSrc = url;
+      await this.canvasInit();
+    },
+    handleClick(index) {
+      if (index === 0) {
+        this.$emit("back");
+      } else {
+        this.clipSrc = this.getCLipImg();
+        this.$emit("confirm", this.clipSrc);
+        console.log(this.clipSrc);
       }
-      this.canvasInit();
     },
-    preview() {
-      if (!this.selectionBox) return false;
-      this.clipSrc = this.getCLipImg();
-    },
-    save() {
-      if (!this.selectionBox) return false;
-      this.clipSrc = this.getCLipImg();
-    },
+    // preview() {
+    //   if (!this.selectionBox) return false;
+    //   this.clipSrc = this.getCLipImg();
+    // },
+    // save() {
+    //   if (!this.selectionBox) return false;
+    //   this.clipSrc = this.getCLipImg();
+    // },
     /** 获取裁剪框图片 */
     getCLipImg() {
       const { width, height, scaleX, scaleY, left, top } = this.selectionBox;
@@ -103,10 +138,16 @@ export default {
         selectable: false,
         skipTargetFind: true,
         selection: false,
-        opacity: 0.5,
+        // opacity: 0.5,
         /** 翻转 */
         // flipX: true,
       });
+      bgImg.filters.push(
+        new fabric.Image.filters.Blur({
+          blur: 0.1,
+        }) //模糊
+      );
+      bgImg.applyFilters();
       canvas.add(bgImg);
       return bgImg;
     },
@@ -159,6 +200,8 @@ export default {
       });
       /** 处理展示框中的图片 */
       this.clipImg = fabric.util.object.clone(bgImg);
+      this.clipImg.filters = [];
+      this.clipImg.applyFilters();
       /** 处理蒙层 */
       const clipMaskPath = new fabric.Rect({
         absolutePositioned: true,
@@ -187,6 +230,20 @@ export default {
       canvas.setActiveObject(this.selectionBox);
       this.selectionBox.on("moving", this.onSelectionMoving);
       this.selectionBox.on("scaling", this.onSelectionScaling);
+      this.synchronousButton(this.selectionBox);
+    },
+    /** 按钮组位置同步 */
+    synchronousButton(ele) {
+      const { width, height, scaleX, scaleY, left, top } = ele;
+      let w = width * scaleX;
+      let h = height * scaleY;
+      this.$refs.clip_picture_btns.style.left = `${
+        left + w + this.canvas._offset.left - 120
+      }px`;
+      this.$refs.clip_picture_btns.style.top = `${
+        top + h + this.canvas._offset.top + 10
+      }px`;
+      this.$refs.clip_picture_btns.style.display = "block";
     },
     /** 监听选择框移动 */
     onSelectionMoving() {
@@ -208,12 +265,12 @@ export default {
       }
       const point = this.selectionBox.getCenterPoint();
       this.clipImg.clipPath.setPositionByOrigin(point, "center", "center");
+      this.synchronousButton(this.selectionBox);
     },
     /** 监听选择框大小改变 */
     onSelectionScaling() {
       const { strokeWidth } = this.clipBorder;
       const tmpSize = strokeWidth * 2;
-      console.log(this.canvas.width);
       if (
         this.canvas.width <
         this.selectionBox.width * this.selectionBox.scaleX + tmpSize
@@ -237,7 +294,6 @@ export default {
           ) / 100
         );
       }
-      console.log(this.selectionBox);
       const { width, height, scaleX, scaleY, left, top } = this.selectionBox;
       this.clipImg.clipPath.setCoords();
       /** 同步裁剪框大小 */
@@ -247,10 +303,12 @@ export default {
         width: width * scaleX,
         height: height * scaleY,
       });
+      this.synchronousButton(this.selectionBox);
     },
 
     /** 初始化函数 */
     async canvasInit() {
+      await this.calculateCanvasSize();
       if (this.selectionBox) {
         this.selectionBox.off("moving", this.onSelectionMoving);
         this.selectionBox.off("scaling", this.onSelectionScaling);
@@ -258,19 +316,19 @@ export default {
       if (this.canvas) {
         this.canvas.clear();
       } else {
-        this.canvas = new fabric.Canvas(this.$refs.panel_canvas, {
+        this.canvas = new fabric.Canvas(this.$refs.clip_picture_canvas, {
           // 选择区域颜色
           selectionColor: "rgba(0,0,0,0.05)",
           backgroundColor: "rgba(0, 0, 0, 0.8)",
           preserveObjectStacking: true,
         });
       }
+      console.log(this.canvas, this.$refs.clip_picture_canvas);
       /** 背景图片 */
       const bgImg = await this.bgImgInit(this.canvas);
       this.selectionBoxInit(this.canvas, bgImg);
     },
   },
-  mounted() {},
   beforeDestroy() {
     if (this.selectionBox) {
       this.selectionBox.off("moving", this.onSelectionMoving);
@@ -279,28 +337,23 @@ export default {
   },
 };
 </script>
-<style lang="less">
-.panel {
+
+<style lang="less" scoped>
+.clip-picture {
+  width: 100%;
+  height: 100%;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
+  &__btns {
+    position: absolute;
+    left: 0;
+    right: 0;
+    display: none;
+  }
   &__canvas {
-    border: 1px dashed black;
-  }
-  &__tools {
-    display: flex;
-    align-items: center;
-    &-item {
-      margin-right: 10px;
-      cursor: pointer;
-      &:last-child {
-        margin-right: 0;
-      }
-    }
-  }
-  &__clip {
-    width: 640px;
-    height: 360px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    background: url("./assets/bg.png");
   }
 }
 </style>
