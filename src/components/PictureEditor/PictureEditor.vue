@@ -1,6 +1,6 @@
 <template>
   <div class="picture-editor">
-    <div class="picture-editor__header">
+    <div class="picture-editor__header" v-if="step !== 2">
       <el-steps
         class="picture-editor__header__steps"
         :active="step"
@@ -24,27 +24,26 @@
       @back="handleBack"
       @confirm="clipConfirm"
     ></ClipPicture>
-    <el-image :src="activeUrl" fit="contain" v-show="step === 2"> </el-image>
-    <!-- <EditPicture
-      v-show="step === 2"
-      ref="EditPicture"
-      @back="handleBack"
-      @confirm="editConfirm"
-    ></EditPicture> -->
+    <!-- <el-image :src="activeUrl" fit="contain" v-show="step === 2"> </el-image> -->
+    <EditorPicture v-show="step === 2" ref="EditorPicture"></EditorPicture>
+    <!-- @back="handleBack"
+      @confirm="editConfirm" -->
   </div>
 </template>
 
 <script>
 import SelectPicture from "./SelectPicture.vue";
 import ClipPicture from "./ClipPicture.vue";
+import EditorPicture from "./EditorPicture.vue";
 export default {
   components: {
     ClipPicture,
     SelectPicture,
+    EditorPicture,
   },
   data() {
     return {
-      step: 0,
+      step: 2,
       imgList: [
         {
           title: "",
@@ -108,9 +107,9 @@ export default {
   },
   mounted() {
     // this.step = 1;
-    // this.$refs.ClipPicture.selectPic(
-    //   "/mock/patient__2483281_545510905141628_67341462.jpg"
-    // );
+    this.$refs.EditorPicture.selectPic(
+      "/mock/patient__2483281_545510905141628_67341462.jpg"
+    );
   },
 };
 </script>
@@ -122,6 +121,8 @@ export default {
   position: fixed;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
   background-color: #1b1b1b;
   z-index: 2;
   color: #fff;

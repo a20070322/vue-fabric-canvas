@@ -59,7 +59,8 @@ export default {
     calculateCanvasSize() {
       return new Promise((resolve) => {
         this.$nextTick(() => {
-          const { clientWidth, clientHeight } = this.$refs.clip_picture;
+          let { clientWidth, clientHeight } = this.$refs.clip_picture;
+          clientHeight -= 100;
           let canvasWidth, canvasHeight;
           if (this.canvasSize.proportion) {
             if (
