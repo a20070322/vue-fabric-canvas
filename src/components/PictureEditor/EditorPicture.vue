@@ -8,15 +8,16 @@
             v-if="item.isHasColor"
             placement="right-start"
             width="28"
-            trigger="click"
+            trigger="manual"
+            :value="drawingType == item.type"
             popper-class="el-popover-color"
           >
-            <!-- 使用手动控制 更友好写 manual -->
             <div class="color-box">
               <div
                 class="color-box__item"
                 v-for="(color, sindx) in dictColor"
                 :key="sindx"
+                @click="setColor(item.type, color)"
                 :style="{
                   backgroundColor: color,
                   borderColor:
@@ -26,19 +27,28 @@
                       ? '#fff'
                       : color,
                 }"
-              ></div>
+              />
             </div>
             <div
               @click="changeType(item.type)"
               slot="reference"
               class="editor-picture__left__main__icon iconfont"
-              :class="item.icon"
+              :class="{
+                [item.icon]: true,
+                'editor-picture__left__main__icon-active':
+                  drawingType == item.type,
+              }"
             />
           </el-popover>
           <div
             v-else
+            @click="changeType(item.type)"
             class="editor-picture__left__main__icon iconfont"
-            :class="item.icon"
+            :class="{
+              [item.icon]: true,
+              'editor-picture__left__main__icon-active':
+                drawingType == item.type,
+            }"
           />
         </div>
       </div>
@@ -49,11 +59,50 @@
           type="danger"
           >返回
         </el-button>
-        <div></div>
+        <i></i>
         <el-button size="mini" type="success"> 保存 </el-button>
       </div>
     </div>
     <div class="editor-picture__main">
+      <div class="editor-picture__main__material">
+        <div class="editor-picture__main__material__left">贴图素材</div>
+        <img
+          draggable
+          @dragstart="dragStart($event, 'img_value_body')"
+          ref="img_value_body"
+          style="height: 80px; padding: 10px"
+          class="editor-picture__main__material__img"
+          :src="materialList.value_body"
+          alt=""
+        />
+        <div class="editor-picture__main__material__content">
+          <div class="editor-picture__main__material__content__row">
+            <img
+              @dragstart="dragStart($event, `img_up_${index}`)"
+              draggable
+              :ref="`img_up_${index}`"
+              class="editor-picture__main__material__img"
+              v-for="(item, index) in materialList.up"
+              :key="index"
+              :src="item"
+              alt=""
+            />
+          </div>
+          <div class="editor-picture__main__material__content__row">
+            <img
+              @dragstart="dragStart($event, `img_down_${index}`)"
+              draggable
+              :ref="`img_down_${index}`"
+              class="editor-picture__main__material__img"
+              v-for="(item, index) in materialList.down"
+              :key="index"
+              :src="item"
+              object-fit="contain"
+              alt=""
+            />
+          </div>
+        </div>
+      </div>
       <div class="editor-picture__main__draw" ref="canvas_box">
         <canvas
           ref="picture_canvas"
@@ -69,6 +118,7 @@
 <script>
 import { fabric } from "fabric";
 import { fromImgURL } from "./utils/utils.js";
+import { materialList } from "./dict/material.js";
 // eleAdaptiveCanvas
 export default {
   data() {
@@ -82,6 +132,8 @@ export default {
           height: 2,
         },
       },
+      /** 贴图字典 */
+      materialList: materialList,
       /** 颜色字典 */
       dictColor: ["#f5222d", "#faad14", "#1890ff", "#52c41a"],
       /** 工具栏配置 */
@@ -182,6 +234,11 @@ export default {
     };
   },
   methods: {
+    dragStart(e, refKey) {
+      e.dataTransfer.setData("dropData", refKey);
+      e.dataTransfer.setData("offsetX", e.offsetX);
+      e.dataTransfer.setData("offsetY", e.offsetY);
+    },
     /**
      * 计算画布大小
      */
@@ -246,6 +303,18 @@ export default {
         this.canvas.on("mouse:down", this.mouseDown);
         this.canvas.on("mouse:move", this.mouseMove);
         this.canvas.on("mouse:up", this.mouseUp);
+        this.canvas.on("drop", async ({ e }) => {
+          const refKey = e.dataTransfer.getData("dropData");
+          const img = Array.isArray(this.$refs[refKey])
+            ? this.$refs[refKey]?.[0]
+            : this.$refs[refKey] || false;
+          if (!img) return;
+          const neImg = await fromImgURL(img.src);
+          neImg.scaleToWidth(40);
+          neImg.left = e.offsetX - (neImg.width * neImg.scaleX) / 2;
+          neImg.top = e.offsetY - (neImg.height * neImg.scaleY) / 2;
+          this.canvas.add(neImg);
+        });
         /** 监听键盘事件 */
         document.addEventListener("keydown", this.keyDown);
         document.addEventListener("keyup", this.keyUp);
@@ -257,9 +326,21 @@ export default {
       this.selectPicSrc = url;
       await this.canvasInit();
     },
-
+    /**
+     * 设置颜色
+     */
+    setColor(type, color) {
+      this.$set(this.drawingOptions[type], "color", color);
+      // 设置画笔颜色
+      if (type === "brush") {
+        this.canvas.freeDrawingBrush.color = color;
+      }
+    },
     changeType(type) {
-      console.log(type);
+      if (type == "delete") {
+        this.delActiveElement(true);
+        return;
+      }
       this.drawingType = type;
       this.canvas.isDrawingMode = type === "brush";
       if (type === "brush") {
@@ -351,7 +432,6 @@ export default {
           fill: arrow.color,
           strokeWidth: arrow.width,
         });
-        console.log(element);
       }
       /** 文字处理 */
       if (this.drawingType === "text") {
@@ -370,7 +450,6 @@ export default {
       }
 
       if (element) {
-        console.log(element, "添加进入");
         this.canvas.add(element);
         this.drawingTemp = element;
       }
@@ -391,7 +470,7 @@ export default {
       // console.log("鼠标移动", e);
       if (!this.isDrawing) return;
       this.$set(this.mousePointer, "up", e.pointer);
-      if (!["text"].includes(this.drawingType)) {
+      if (!["text", "move", "delete"].includes(this.drawingType)) {
         this.drawing();
       }
     },
@@ -413,6 +492,7 @@ export default {
         };
         fn(this.canvas.getActiveObjects());
       } else {
+        if (this.canvas.getObjects().length - 1 == 0) return;
         this.canvas.remove(
           this.canvas.getObjects()[this.canvas.getObjects().length - 1]
         );
@@ -533,6 +613,9 @@ export default {
         font-size: 25px;
         color: #fff;
         margin-bottom: 20px;
+        &-active {
+          color: #67c23a;
+        }
       }
     }
     &__btns {
@@ -553,6 +636,37 @@ export default {
     // height: 100%;
     display: flex;
     flex-direction: column;
+    &__material {
+      background: #535353;
+      box-sizing: border-box;
+      border-left: 1px solid #424242;
+      display: flex;
+      align-items: center;
+      &__left {
+        flex-shrink: 0;
+        width: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 10px;
+      }
+      &__img {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #3e3e3e;
+        padding: 5px;
+        object-fit: contain;
+      }
+      &__content {
+        flex: 1;
+        overflow-x: auto;
+        &__row {
+          display: flex;
+          align-items: center;
+          // margin-bottom: 10px;
+        }
+      }
+    }
     &__draw {
       flex: 1;
       display: flex;

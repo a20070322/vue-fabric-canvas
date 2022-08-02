@@ -43,7 +43,7 @@ export default {
   },
   data() {
     return {
-      step: 2,
+      step: 0,
       imgList: [
         {
           title: "",
@@ -100,16 +100,17 @@ export default {
       this.step--;
     },
     clipConfirm(url) {
-      console.log(url);
+      // console.log(url);
       this.activeUrl = url;
       this.step++;
+      this.$refs.EditorPicture.selectPic(url);
     },
   },
   mounted() {
-    // this.step = 1;
-    this.$refs.EditorPicture.selectPic(
-      "/mock/patient__2483281_545510905141628_67341462.jpg"
-    );
+    // this.step = 2;
+    // this.$refs.EditorPicture.selectPic(
+    //   "/mock/patient__2483281_545510905141628_67341462.jpg"
+    // );
   },
 };
 </script>
