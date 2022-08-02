@@ -24,10 +24,13 @@
       @back="handleBack"
       @confirm="clipConfirm"
     ></ClipPicture>
-    <!-- <el-image :src="activeUrl" fit="contain" v-show="step === 2"> </el-image> -->
-    <EditorPicture v-show="step === 2" ref="EditorPicture"></EditorPicture>
-    <!-- @back="handleBack"
-      @confirm="editConfirm" -->
+    <EditorPicture
+      @back="handleBack"
+      @confirm="editConfirm"
+      v-show="step === 2"
+      ref="EditorPicture"
+    ></EditorPicture>
+    <el-image :src="activeUrl" fit="contain" v-show="step === 3"> </el-image>
   </div>
 </template>
 
@@ -101,9 +104,15 @@ export default {
     },
     clipConfirm(url) {
       // console.log(url);
-      this.activeUrl = url;
+      // this.activeUrl = url;
       this.step++;
       this.$refs.EditorPicture.selectPic(url);
+    },
+    editConfirm(url) {
+      // console.log(url);
+      this.activeUrl = url;
+      this.step++;
+      // this.$refs.EditorPicture.selectPic(url);
     },
   },
   mounted() {

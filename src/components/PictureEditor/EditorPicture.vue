@@ -57,10 +57,13 @@
           class="editor-picture__left__btns-btn"
           size="mini"
           type="danger"
+          @click="handleClick(0)"
           >返回
         </el-button>
         <i></i>
-        <el-button size="mini" type="success"> 保存 </el-button>
+        <el-button size="mini" type="success" @click="handleClick(1)">
+          保存
+        </el-button>
       </div>
     </div>
     <div class="editor-picture__main">
@@ -131,6 +134,15 @@ export default {
           width: 3,
           height: 2,
         },
+      },
+      outPut: {
+        width: 1280,
+        height: 720,
+      },
+      clipBorder: {
+        // color: "rgba(255,81,81,0.6)",
+        color: "#67C23A",
+        strokeWidth: 4,
       },
       /** 贴图字典 */
       materialList: materialList,
@@ -204,7 +216,7 @@ export default {
           color: "#f5222d",
         },
         text: {
-          fontSize: 20,
+          fontSize: 26,
           color: "#f5222d",
         },
       },
@@ -234,10 +246,58 @@ export default {
     };
   },
   methods: {
+    /** 获取裁剪框图片 */
+    getCLipImg() {
+      /** 将框的颜色排除在外 */
+      const dataURL = this.canvas.toDataURL({
+        format: "png",
+        quality: 1,
+        /** 指定输出图片宽高 */
+        multiplier: Math.floor(this.outPut.width / this.canvas.width),
+        left: 0,
+        top: 0,
+        width: this.canvas.width,
+        height: this.canvas.height,
+      });
+      return dataURL;
+    },
+    handleClick(index) {
+      if (index === 0) {
+        this.$emit("back");
+      } else {
+        this.clipSrc = this.getCLipImg();
+        this.$emit("confirm", this.clipSrc);
+      }
+    },
     dragStart(e, refKey) {
       e.dataTransfer.setData("dropData", refKey);
       e.dataTransfer.setData("offsetX", e.offsetX);
       e.dataTransfer.setData("offsetY", e.offsetY);
+    },
+    async onDrop({ e }) {
+      const refKey = e.dataTransfer.getData("dropData");
+      const img = Array.isArray(this.$refs[refKey])
+        ? this.$refs[refKey]?.[0]
+        : this.$refs[refKey] || false;
+      if (!img) return;
+      const neImg = await fromImgURL(img.src);
+      neImg.scaleToWidth(40);
+      neImg.set({
+        left: e.offsetX - (neImg.width * neImg.scaleX) / 2,
+        top: e.offsetY - (neImg.height * neImg.scaleY) / 2,
+        borderColor: this.clipBorder.color,
+        cornerColor: this.clipBorder.color,
+        cornerSize: 10,
+        transparentCorners: false,
+      });
+      /** 禁用上下左右以及旋转 */
+      neImg.setControlsVisibility({
+        mt: false,
+        mr: false,
+        mb: false,
+        ml: false,
+      });
+      this.canvas.add(neImg);
     },
     /**
      * 计算画布大小
@@ -303,18 +363,7 @@ export default {
         this.canvas.on("mouse:down", this.mouseDown);
         this.canvas.on("mouse:move", this.mouseMove);
         this.canvas.on("mouse:up", this.mouseUp);
-        this.canvas.on("drop", async ({ e }) => {
-          const refKey = e.dataTransfer.getData("dropData");
-          const img = Array.isArray(this.$refs[refKey])
-            ? this.$refs[refKey]?.[0]
-            : this.$refs[refKey] || false;
-          if (!img) return;
-          const neImg = await fromImgURL(img.src);
-          neImg.scaleToWidth(40);
-          neImg.left = e.offsetX - (neImg.width * neImg.scaleX) / 2;
-          neImg.top = e.offsetY - (neImg.height * neImg.scaleY) / 2;
-          this.canvas.add(neImg);
-        });
+        this.canvas.on("drop", this.onDrop);
         /** 监听键盘事件 */
         document.addEventListener("keydown", this.keyDown);
         document.addEventListener("keyup", this.keyUp);
@@ -387,6 +436,11 @@ export default {
           rx: Math.abs(down.x - up.x) / 2,
           ry: Math.abs(down.y - up.y) / 2,
           strokeWidth: ellipse.width,
+          //
+          borderColor: this.clipBorder.color,
+          cornerColor: this.clipBorder.color,
+          cornerSize: 10,
+          transparentCorners: false,
         });
       }
       /** 矩形处理 */
@@ -402,6 +456,11 @@ export default {
           width: Math.abs(down.x - up.x),
           height: Math.abs(down.y - up.y),
           strokeWidth: rectangle.width,
+          //
+          borderColor: this.clipBorder.color,
+          cornerColor: this.clipBorder.color,
+          cornerSize: 10,
+          transparentCorners: false,
         });
       }
       /** 箭头处理 */
@@ -431,6 +490,12 @@ export default {
           stroke: arrow.color,
           fill: arrow.color,
           strokeWidth: arrow.width,
+
+          //
+          borderColor: this.clipBorder.color,
+          cornerColor: this.clipBorder.color,
+          cornerSize: 10,
+          transparentCorners: false,
         });
       }
       /** 文字处理 */
