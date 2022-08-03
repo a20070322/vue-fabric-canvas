@@ -268,6 +268,7 @@ export default {
         this.clipSrc = this.getCLipImg();
         this.$emit("confirm", this.clipSrc);
       }
+      this.drawingType = "";
     },
     dragStart(e, refKey) {
       e.dataTransfer.setData("dropData", refKey);
