@@ -86,7 +86,7 @@ export default {
         padding: 20px 10px;
         box-sizing: border-box;
       }
-      ::v-deep .image-slot {
+      :deep .image-slot {
         width: 240px;
         height: 135px;
         display: flex;

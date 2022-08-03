@@ -147,8 +147,8 @@ export default {
       width: 100%;
       border-radius: 0px;
       background-color: #323232;
-      ::v-deep .el-step__head.is-process,
-      ::v-deep .el-step__title.is-process {
+      :deep .el-step__head.is-process,
+      :deep .el-step__title.is-process {
         color: #fff;
       }
     }
@@ -180,7 +180,7 @@ export default {
         padding: 20px 10px;
         box-sizing: border-box;
       }
-      ::v-deep .image-slot {
+      :deep .image-slot {
         width: 240px;
         height: 135px;
         display: flex;
