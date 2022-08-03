@@ -35,7 +35,7 @@
 <script>
 import { fabric } from "fabric";
 export default {
-  name: "Home",
+  name: "HomePage",
   components: {},
   data() {
     return {

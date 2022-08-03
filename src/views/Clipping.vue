@@ -23,7 +23,7 @@
 import { fabric } from "fabric";
 import { fromImgURL, eleAdaptiveCanvas } from "./utils.js";
 export default {
-  name: "About",
+  name: "ClippingPage",
   data() {
     return {
       canvasSize: {

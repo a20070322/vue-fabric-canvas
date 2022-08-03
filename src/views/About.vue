@@ -88,7 +88,7 @@
 <script>
 import { fabric } from "fabric";
 export default {
-  name: "About",
+  name: "AboutPage",
   data() {
     return {
       width: 1280,

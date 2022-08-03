@@ -37,8 +37,6 @@ const routes = [
     component: () =>
       import(/* webpackChunkName: "about" */ "../views/Component.vue"),
   },
-
-  
 ];
 
 const router = new VueRouter({
