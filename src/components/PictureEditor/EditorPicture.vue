@@ -308,6 +308,8 @@ export default {
         this.$nextTick(() => {
           let { clientWidth, clientHeight } = this.$refs.canvas_box;
           let canvasWidth, canvasHeight;
+          // TODO: 这里的算法不够优雅 应该通过如下判断
+          //  clientWidth / clientHeight > proportion.width / proportion.height
           if (this.canvasSize.proportion) {
             if (
               this.canvasSize.proportion.width >

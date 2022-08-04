@@ -30,7 +30,6 @@
       v-show="step === 2"
       ref="EditorPicture"
     ></EditorPicture>
-    <el-image :src="activeUrl" fit="contain" v-show="step === 3"> </el-image>
   </div>
 </template>
 
@@ -95,7 +94,6 @@ export default {
       if (!e.img.url) {
         return;
       }
-      this.activeUrl = e.img.url;
       this.step++;
       this.$refs.ClipPicture.selectPic(e.img.url);
     },
@@ -103,24 +101,14 @@ export default {
       this.step--;
     },
     clipConfirm(url) {
-      // console.log(url);
-      // this.activeUrl = url;
       this.step++;
       this.$refs.EditorPicture.selectPic(url);
     },
     editConfirm(url) {
-      // console.log(url);
-      this.activeUrl = url;
-      this.step++;
-      // this.$refs.EditorPicture.selectPic(url);
+      this.$emit("change", url);
     },
   },
-  mounted() {
-    // this.step = 2;
-    // this.$refs.EditorPicture.selectPic(
-    //   "/mock/patient__2483281_545510905141628_67341462.jpg"
-    // );
-  },
+  mounted() {},
 };
 </script>
 
